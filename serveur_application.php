@@ -1,6 +1,6 @@
 <?php
 /// Librairies éventuelles (pour la connexion à la BDD, etc.)
- include('mylib.php');
+require_once 'config.php';
 
  /// Paramétrage de l'entête HTTP (pour la réponse au Client)
  header("Content-Type:application/json");
