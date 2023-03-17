@@ -1,6 +1,7 @@
 <?php
 /// Librairies éventuelles (pour la connexion à la BDD, etc.)
- include('mylib.php');
+ include ('config.php');
+ include('jwt_utils.php');
 
  // se connecter à la base de données MySQL
 require_once 'config.php';
@@ -10,49 +11,69 @@ require_once 'config.php';
 
  /// Identification du type de méthode HTTP envoyée par le client
  $http_method = $_SERVER['REQUEST_METHOD'];
- 
- switch ($http_method){
-    /// Cas de la méthode GET
-    case "GET" :
-        /// Récupération des critères de recherche envoyés par le Client
-        if (!empty($_GET['mon_critere'])){
-            /// Traitement
+
+/// méthode POST
+if ($http_method == "POST") {
+    /// Récupération des données envoyées par le Client
+    $postedData = (array) json_decode(file_get_contents('php://input'),TRUE);
+
+    $identifiant = $postedData['identifiant'];
+    $mdp = $postedData['mdp'];
+
+    if (isset($postedData['action']) && $postedData['action'] == "inscription") {
+        // cas de l'inscription à l'application
+
+        $nom = $postedData['nom'];
+        $prenom = $postedData['prenom']; 
+        $role_r = $postedData['role_r'];
+
+        // Vérification que l'utilisateur n'existe pas déjà
+        $sql = "SELECT COUNT(*) AS nb FROM utilisateur WHERE identifiant = :identifiant;";
+        $result = $database->prepare($sql);
+        $result->execute(array(':identifiant' => $identifiant));
+        $row = $result->fetch(PDO::FETCH_ASSOC);
+
+        if ($row['nb'] > 0) {
+            deliver_response(400, "Cet identifiant est déjà utilisé", NULL);
+        } 
+        else {
+
+            // Hashage du mot de passe en utilisant l'algorithme HS256
+            $hashed_mdp = hash_hmac('sha256', $mdp, "secret");
+            
+            // Insertion de l'utilisateur dans la base de données
+            $sql = "INSERT INTO utilisateur (nom,prenom,role_r, mdp,identifiant) VALUES (:nom, :prenom ,:role_r , :mdp, :identifiant);";
+            $psql = $database->prepare($sql);
+            $params = array(
+                ':nom' => $nom,
+                ':prenom' => $prenom,
+                ':role_r' => $role_r,
+                ':mdp' => $hashed_mdp,
+                ':identifiant' => $identifiant  
+            );
+            if($psql->execute($params)){
+                deliver_response(200, "Inscription validée", NULL);
+            }
+            else {
+                deliver_response(400, "Erreur lors de l'inscription: ", $psql->errorInfo()[2]);
+            }
         }
-        /// Envoi de la réponse au Client
-        deliver_response(200, "Votre message", $matchingData);
-        break;
+        
+    }
+    else if(isset($postedData['action']) && $postedData['action'] == "connexion"){
 
-    /// Cas de la méthode POST
-    case "POST" :
-        /// Récupération des données envoyées par le Client
-        $postedData = file_get_contents('php://input');
-
-        /// Traitement
-
-        /// Envoi de la réponse au Client
-        deliver_response(201, "Votre message", NULL);
-        break;
-
-    /// Cas de la méthode PUT
-    case "PUT" :
-        /// Récupération des données envoyées par le Client
-        $postedData = file_get_contents('php://input');
-        /// Traitement
-        /// Envoi de la réponse au Client
-        deliver_response(200, "Votre message", NULL);
-        break;
-    
-    /// Cas de la méthode DELETE
-    default :
-    /// Récupération de l'identifiant de la ressource envoyé par le Client
-        if (!empty($_GET['mon_id'])){
-            /// Traitement
+        if (connexion($identifiant, $mdp,$database)){
+            // cas de la connexion à l'application
+            $headers = array('alg' => 'HS256', 'typ' => 'JWT');
+            $payload = array('id' => $identifiant, 'exp' => (time() + 3600));
+            $jwt = generate_jwt($headers, $payload);
+            deliver_response(200, "Votre message", $jwt);
         }
-        /// Envoi de la réponse au Client
-        deliver_response(200, "Votre message", NULL);
-        break;
+        else{
+            deliver_response(401, "L'identifiant ou le mot de passe est incorect", NULL);
+        }
+    }
 }
-/// Envoi de la réponse au Client
 function deliver_response($status, $status_message, $data){
     /// Paramétrage de l'entête HTTP, suite
     header("HTTP/1.1 $status $status_message");
@@ -65,3 +86,14 @@ function deliver_response($status, $status_message, $data){
     echo $json_response;
 }
 
+function connexion($identifiant, $mdp, $database){
+
+
+    $sql = "SELECT mdp FROM utilisateur WHERE identifiant = :identifiant";
+    $psql = $database->prepare($sql);
+    $psql->execute(array(':identifiant' => $identifiant));
+    $row = $psql->fetch(PDO::FETCH_ASSOC);
+
+    return password_verify($mdp, $row['mdp']);
+}
+?>
