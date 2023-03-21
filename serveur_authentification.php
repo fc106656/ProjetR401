@@ -39,7 +39,7 @@ if ($http_method == "POST") {
         else {
 
             // Hashage du mot de passe en utilisant l'algorithme HS256
-            $hashed_mdp = hash_hmac('sha256', $mdp, "secret");
+            $hashed_mdp = password_hash($mdp,PASSWORD_DEFAULT);
             
             // Insertion de l'utilisateur dans la base de données
             $sql = "INSERT INTO utilisateur (nom,prenom,role_r, mdp,identifiant) VALUES (:nom, :prenom ,:role_r , :mdp, :identifiant);";
@@ -61,13 +61,18 @@ if ($http_method == "POST") {
         
     }
     else if(isset($postedData['action']) && $postedData['action'] == "connexion"){
+        $sql = "SELECT role_r FROM utilisateur WHERE identifiant = :identifiant";
+        $psql = $database->prepare($sql);
+        $psql->execute(array(':identifiant' => $identifiant));
+        $row = $psql->fetch(PDO::FETCH_ASSOC);
+        $role_r = $row['role_r'];
 
         if (connexion($identifiant, $mdp,$database)){
             // cas de la connexion à l'application
             $headers = array('alg' => 'HS256', 'typ' => 'JWT');
-            $payload = array('id' => $identifiant, 'exp' => (time() + 3600));
+            $payload = array('id' => $identifiant, 'mdp'=> $mdp, 'role_r' => $role_r, 'exp' => (time() + 3600));
             $jwt = generate_jwt($headers, $payload);
-            deliver_response(200, "Votre message", $jwt);
+            deliver_response(200, "Le token jwt est créé", $jwt);
         }
         else{
             deliver_response(401, "L'identifiant ou le mot de passe est incorect", NULL);
@@ -96,4 +101,23 @@ function connexion($identifiant, $mdp, $database){
 
     return password_verify($mdp, $row['mdp']);
 }
+/*
+    // Exemple de requête POST pour l'inscription
+    {
+        "identifiant": "c",
+        "mdp": "a",
+        "nom":"f",
+        "prenom":"c",
+        "role_r": "admin",
+        "action": "inscription"
+    }
+
+    // Exemple de requête POST pour la connexion
+    {
+        "identifiant": "c",
+        "mdp": "a",
+        "action": "connexion"
+    }
+*/
 ?>
+
