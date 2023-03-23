@@ -17,7 +17,7 @@ if ($http_method == "POST") {
     /// Récupération des données envoyées par le Client
     $postedData = (array) json_decode(file_get_contents('php://input'),TRUE);
 
-    $identifiant = $postedData['identifiant'];
+    $id_utilisateur = $postedData['id_utilisateur'];
     $mdp = $postedData['mdp'];
 
     if (isset($postedData['action']) && $postedData['action'] == "inscription") {
@@ -28,9 +28,9 @@ if ($http_method == "POST") {
         $role_r = $postedData['role_r'];
 
         // Vérification que l'utilisateur n'existe pas déjà
-        $sql = "SELECT COUNT(*) AS nb FROM utilisateur WHERE identifiant = :identifiant;";
+        $sql = "SELECT COUNT(*) AS nb FROM utilisateur WHERE id_utilisateur = :id_utilisateur;";
         $result = $database->prepare($sql);
-        $result->execute(array(':identifiant' => $identifiant));
+        $result->execute(array(':id_utilisateur' => $id_utilisateur));
         $row = $result->fetch(PDO::FETCH_ASSOC);
 
         if ($row['nb'] > 0) {
@@ -42,14 +42,14 @@ if ($http_method == "POST") {
             $hashed_mdp = password_hash($mdp,PASSWORD_DEFAULT);
             
             // Insertion de l'utilisateur dans la base de données
-            $sql = "INSERT INTO utilisateur (nom,prenom,role_r, mdp,identifiant) VALUES (:nom, :prenom ,:role_r , :mdp, :identifiant);";
+            $sql = "INSERT INTO utilisateur (nom,prenom,role_r, mdp,id_utilisateur) VALUES (:nom, :prenom ,:role_r , :mdp, :id_utilisateur);";
             $psql = $database->prepare($sql);
             $params = array(
                 ':nom' => $nom,
                 ':prenom' => $prenom,
                 ':role_r' => $role_r,
                 ':mdp' => $hashed_mdp,
-                ':identifiant' => $identifiant  
+                ':id_utilisateur' => $id_utilisateur  
             );
             if($psql->execute($params)){
                 deliver_response(200, "Inscription validée", NULL);
@@ -61,16 +61,16 @@ if ($http_method == "POST") {
         
     }
     else if(isset($postedData['action']) && $postedData['action'] == "connexion"){
-        $sql = "SELECT role_r FROM utilisateur WHERE identifiant = :identifiant";
+        $sql = "SELECT role_r FROM utilisateur WHERE id_utilisateur = :id_utilisateur";
         $psql = $database->prepare($sql);
-        $psql->execute(array(':identifiant' => $identifiant));
+        $psql->execute(array(':id_utilisateur' => $id_utilisateur));
         $row = $psql->fetch(PDO::FETCH_ASSOC);
         $role_r = $row['role_r'];
 
-        if (connexion($identifiant, $mdp,$database)){
+        if (connexion($id_utilisateur, $mdp,$database)){
             // cas de la connexion à l'application
             $headers = array('alg' => 'HS256', 'typ' => 'JWT');
-            $payload = array('id' => $identifiant, 'mdp'=> $mdp, 'role_r' => $role_r, 'exp' => (time() + 3600));
+            $payload = array('id' => $id_utilisateur, 'mdp'=> $mdp, 'role_r' => $role_r, 'exp' => (time() + 3600));
             $jwt = generate_jwt($headers, $payload);
             deliver_response(200, "Le token jwt est créé", $jwt);
         }
@@ -91,12 +91,12 @@ function deliver_response($status, $status_message, $data){
     echo $json_response;
 }
 
-function connexion($identifiant, $mdp, $database){
+function connexion($id_utilisateur, $mdp, $database){
 
 
-    $sql = "SELECT mdp FROM utilisateur WHERE identifiant = :identifiant";
+    $sql = "SELECT mdp FROM utilisateur WHERE id_utilisateur = :id_utilisateur";
     $psql = $database->prepare($sql);
-    $psql->execute(array(':identifiant' => $identifiant));
+    $psql->execute(array(':id_utilisateur' => $id_utilisateur));
     $row = $psql->fetch(PDO::FETCH_ASSOC);
 
     return password_verify($mdp, $row['mdp']);
@@ -104,7 +104,7 @@ function connexion($identifiant, $mdp, $database){
 /*
     // Exemple de requête POST pour l'inscription
     {
-        "identifiant": "c",
+        "id_utilisateur": "c",
         "mdp": "a",
         "nom":"f",
         "prenom":"c",
@@ -114,7 +114,7 @@ function connexion($identifiant, $mdp, $database){
 
     // Exemple de requête POST pour la connexion
     {
-        "identifiant": "c",
+        "id_utilisateur": "c",
         "mdp": "a",
         "action": "connexion"
     }
