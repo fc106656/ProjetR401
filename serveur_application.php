@@ -66,14 +66,12 @@ require_once('config.php');
                         }
                         // Encodage du tableau en JSON et renvoi de la réponse
                         $push = json_encode($articles);
-                        deliver_response(200,"donnée transmise debug",$push);
+                        deliver_response(200,"donnée transmise",$push);   
                     }
                     else{
                         deliver_response(400,"critere demande",NULL);
                     }
-
-
-
+                    break;
                 case "publisher":
                     if(empty($_GET['action'])){
                         // Requête SQL pour récupérer les articles avec leur ID, date, nom et prénom de l'auteur, et contenu
@@ -112,7 +110,7 @@ require_once('config.php');
                         }
                         // Encodage du tableau en JSON et renvoi de la réponse
                         $push = json_encode($articles);
-                        deliver_response(200,"donnée transmise debug",$push);
+                        deliver_response(200,"donnée transmise",$push);
                     
                     }
                     else if($_GET['action'] == "myarticles"){
@@ -164,7 +162,7 @@ require_once('config.php');
                     }
                     else {
                         deliver_response(400,"Si une action est précisé elle doit être : myarticles",NULL);
-                        }
+                    }
                     
                     break;
                 default:
@@ -243,8 +241,6 @@ require_once('config.php');
         } else {
             deliver_response( 400, "Le jeton n'est pas valide ou a expiré", NULL);
         }
-        // Envoi de la réponse au Client
-        // deliver_response(201, "Votre message", NULL);
         break;
 
     /// Cas de la méthode DELETE
@@ -316,6 +312,7 @@ require_once('config.php');
                 // Vérifier si l'utilisateur est un éditeur
                 if($payload_role != "publisher"){
                     deliver_response(400, "Vous n'avez pas les droits pour liker ou disliker un article", NULL);
+                    break;
                 }
                 else{
                     $sql = "SELECT fk_id_auteur FROM article WHERE id_article = :id_article";
@@ -344,7 +341,6 @@ require_once('config.php');
                         );
                         if(!$psql->execute($params)){
                             deliver_response(500, "Erreur : " . $psql->errorInfo()[2], NULL);
-                            exit();
                         }
                         else{
 
@@ -360,6 +356,7 @@ require_once('config.php');
                                 }
                                 else {
                                     deliver_response(500, "Erreur : " . $psql->errorInfo()[2], NULL);
+                                    
                                 }
                             } else {
                                 // Création d'une nouvelle entrée
@@ -384,6 +381,7 @@ require_once('config.php');
             elseif (!empty($_GET['id_article']) && $action == "update") {
                 if($payload_role != "publisher"){
                     deliver_response(400, "Vous n'avez pas les droits pour modifier un article", NULL);
+                    break;
                 }
                 else{
                     $sql = "SELECT fk_id_auteur FROM article WHERE id_article = :id_article";
@@ -427,7 +425,6 @@ require_once('config.php');
             }
             else {
                deliver_response(400, "L'action doit être soit'like' soit 'dislike' soit 'update'.", NULL);
-                exit();
             }
         }
         else {
