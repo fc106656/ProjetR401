@@ -35,7 +35,6 @@ require_once('config.php');
                         $articles = array();
                         // Récupération des données et ajout au tableau des articles
                         while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-                            echo $row["fk_id_auteur"];
                             $reqauteur = "SELECT * FROM utilisateur WHERE id_utilisateur = :id_utilisateur";
                             $auteur = $database->prepare($reqauteur);
                             $params = array(
@@ -67,11 +66,12 @@ require_once('config.php');
                         }
                         // Encodage du tableau en JSON et renvoi de la réponse
                         $push = json_encode($articles);
-                        deliver_response(200,"donnée transmise",$push);
+                        deliver_response(200,"donnée transmise debug",$push);
                     }
                     else{
                         deliver_response(400,"critere demande",NULL);
                     }
+
 
 
                 case "publisher":
@@ -87,7 +87,6 @@ require_once('config.php');
                         $articles = array();
                         // Récupération des données et ajout au tableau des articles
                         while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-                            echo $row["fk_id_auteur"];
                             $reqauteur = "SELECT * FROM utilisateur WHERE id_utilisateur = :id_utilisateur";
                             $auteur = $database->prepare($reqauteur);
                             $params = array(
@@ -113,7 +112,7 @@ require_once('config.php');
                         }
                         // Encodage du tableau en JSON et renvoi de la réponse
                         $push = json_encode($articles);
-                        deliver_response(200,"donnée transmise",$push);
+                        deliver_response(200,"donnée transmise debug",$push);
                     
                     }
                     else if($_GET['action'] == "myarticles"){
@@ -130,7 +129,6 @@ require_once('config.php');
                         $articles = array();
                         // Récupération des données et ajout au tableau des articles
                         while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-                            echo $row["fk_id_auteur"];
                             $reqauteur = "SELECT * FROM utilisateur WHERE id_utilisateur = :id_utilisateur";
                             $auteur = $database->prepare($reqauteur);
                             $params = array(
@@ -204,8 +202,7 @@ require_once('config.php');
 
             // vérifier si l'utilisateur est un éditeur
             if ($payload_role != "publisher") {
-                http_response_code(400);
-                echo "Vous n'avez pas les droits pour créer un article";
+                deliver_response(400, "Vous n'avez pas les droits pour créer un article", NULL);
                 break;
             }
             else{
@@ -217,8 +214,7 @@ require_once('config.php');
 
                 if ($result->rowCount() == 0) {
                     // si l'utilisateur n'existe pas, renvoyer une erreur
-                    http_response_code(400);
-                    echo "L'utilisateur n'existe pas";
+                    deliver_response(400, "L'utilisateur n'existe pas", NULL);
                 } 
                 else {
                     // insérer le nouvel article dans la table "article"
@@ -236,20 +232,16 @@ require_once('config.php');
                     
                     if ($psql->execute($params)) {
                         // si l'insertion de l'article a réussi, renvoyer un code 201
-                        http_response_code(201);
-                        echo "L'article a été créé avec succès";
+                        deliver_response(201,"Votre article a bien été créé",NULL);
                     } 
                     else {
                         // si l'insertion de l'article a échoué, renvoyer une erreur
-                        http_response_code(500);
-                        echo "Erreur : " . $psql->errorInfo()[2];
+                        deliver_response(400,"Votre article n'a pas pu être créé",$psql->errorInfo()[2]);
                     }
-
                 }
             }
         } else {
-            http_response_code(400);
-            echo "Le jeton n'est pas valide ou a expiré";
+            deliver_response( 400, "Le jeton n'est pas valide ou a expiré", NULL);
         }
         // Envoi de la réponse au Client
         // deliver_response(201, "Votre message", NULL);
@@ -275,16 +267,14 @@ require_once('config.php');
                 $result = $psql->fetch(PDO::FETCH_ASSOC);
 
                 if(empty($result)){
-                    http_response_code(400);
-                    echo "L'article n'existe pas";
+                    deliver_response(400, "L'article n'existe pas", NULL);
                     break;
                 }
                 else{
                     $fk_id_auteur = $result['fk_id_auteur'];
 
                     if ($payload_role != "admin" && $payload_id != $fk_id_auteur) {
-                        http_response_code(400);
-                        echo "Vous n'avez pas les droits pour supprimer cet article";
+                        deliver_response(400, "Vous n'avez pas les droits pour supprimer cet article", NULL);
                         break;
                     }
                     else {
@@ -295,24 +285,20 @@ require_once('config.php');
                         );
                         if ($psql->execute($params)) {
                             // si l'insertion de l'article a réussi, renvoyer un code 201
-                            http_response_code(201);
-                            echo "L'article a été supprimé avec succès";
+                            deliver_response(200,"L'article a été supprimé avec succès",NULL);
                         } 
                         else {
                             // si l'insertion de l'article a échoué, renvoyer une erreur
-                            http_response_code(500);
-                            echo "Erreur : " . $psql->errorInfo()[2];
+                            deliver_response(400,"L'article n'a pas pu être supprimé",$psql->errorInfo()[2]);
                         }
                     }
                 }
             }
             else{
-                http_response_code(400);
-                echo "L'id de l'article n'a pas été renseigné";
+                deliver_response(400, "L'id de l'article n'a pas été renseigné", NULL);
             }
         } else {
-            http_response_code(400);
-            echo "Le jeton n'est pas valide ou a expiré";
+            deliver_response( 400, "Le jeton n'est pas valide ou a expiré", NULL);
         }
         break;
     /// Cas de la méthode PATCH
@@ -326,80 +312,130 @@ require_once('config.php');
             $payload_id = get_jwt_payload($bearer)['id'];
             $payload_role = get_jwt_payload($bearer)['role_r'];
             // Vérifier si l'action est "like" ou "dislike"
-            if ($action != "like" && $action != "dislike") {
-                http_response_code(400);
-                echo "L'action doit être soit 'like' soit 'dislike'.";
-                exit();
-            }
-            else {
+            if ($action == "like" || $action == "dislike") {
                 // Vérifier si l'utilisateur est un éditeur
                 if($payload_role != "publisher"){
-                    http_response_code(400);
-                    echo "Vous n'avez pas les droits pour liker ou disliker un article";
+                    deliver_response(400, "Vous n'avez pas les droits pour liker ou disliker un article", NULL);
                 }
                 else{
-                    // Vérifier s'il y a déjà un like ou un dislike pour cet article et cet utilisateur
-                    $sql = "SELECT * FROM likedislike WHERE fk_id_article = :fk_id_article AND fk_id_utilisateur = :fk_id_utilisateur";
+                    $sql = "SELECT fk_id_auteur FROM article WHERE id_article = :id_article";
                     $psql = $database->prepare($sql);
                     $params = array(
-                        ':fk_id_article' => $id_article,
-                        ':fk_id_utilisateur' => $payload_id
+                        ':id_article' => $id_article
                     );
-                    if(!$psql->execute($params)){
-                        http_response_code(500);
-                        echo "Erreur : " . $psql->errorInfo()[2];
-                        exit();
+                    $psql->execute($params);
+                    $result = $psql->fetch(PDO::FETCH_ASSOC);
+                    // Vérifier si l'article existe
+                    if(empty($result)){
+                        deliver_response(400, "L'article n'existe pas", NULL);
+                        break;
                     }
-                    else{
+                    elseif($payload_id == $result['fk_id_auteur']){
+                        deliver_response(400, "Vous ne pouvez pas liker ou disliker votre propre article", NULL);
+                        break;
+                    }
+                    else {
+                        // Vérifier s'il y a déjà un like ou un dislike pour cet article et cet utilisateur
+                        $sql = "SELECT * FROM likedislike WHERE fk_id_article = :fk_id_article AND fk_id_utilisateur = :fk_id_utilisateur";
+                        $psql = $database->prepare($sql);
+                        $params = array(
+                            ':fk_id_article' => $id_article,
+                            ':fk_id_utilisateur' => $payload_id
+                        );
+                        if(!$psql->execute($params)){
+                            deliver_response(500, "Erreur : " . $psql->errorInfo()[2], NULL);
+                            exit();
+                        }
+                        else{
 
-                        if ($psql->rowCount() > 0) {
-                            // Mise à jour de l'entrée existante
-                            $row = $psql->fetch(PDO::FETCH_ASSOC);
-                            $id_article = $row["fk_id_article"];
-                            $id_utilisateur = $row["fk_id_utilisateur"];
-                            $sql = "UPDATE likedislike SET action_a = '$action' WHERE fk_id_article = '$id_article' AND fk_id_utilisateur = '$id_utilisateur'";
-                            $psql = $database->prepare($sql);
-                            if($psql->execute()){
-                                http_response_code(200);
-                                echo "L'action a été mise à jour avec succès";
-                            }
-                            else {
-                                http_response_code(500);
-                                echo "Erreur : " . $psql->errorInfo()[2];
-                            }
-                        } else {
-                            // Création d'une nouvelle entrée
-                            $sql = "INSERT INTO likedislike (fk_id_article, fk_id_utilisateur, action_a) VALUES (:fk_id_article, :fk_id_utilisateur, :action_a)";
-                            $psql = $database->prepare($sql);
-                            $params = array(
-                                ':fk_id_article' => $id_article,
-                                ':fk_id_utilisateur' => $payload_id,
-                                ':action_a' => $action
-                            );
-                            if($psql->execute($params)){
-                                http_response_code(201);
-                                echo "L'action a été ajoutée avec succès";
-                            }
-                            else {
-                                http_response_code(500);
-                                echo "Erreur : " . $psql->errorInfo()[2];
+                            if ($psql->rowCount() > 0) {
+                                // Mise à jour de l'entrée existante
+                                $row = $psql->fetch(PDO::FETCH_ASSOC);
+                                $id_article = $row["fk_id_article"];
+                                $id_utilisateur = $row["fk_id_utilisateur"];
+                                $sql = "UPDATE likedislike SET action_a = '$action' WHERE fk_id_article = '$id_article' AND fk_id_utilisateur = '$id_utilisateur'";
+                                $psql = $database->prepare($sql);
+                                if($psql->execute()){
+                                    deliver_response(200, "L'action a été mise à jour avec succès", NULL);
+                                }
+                                else {
+                                    deliver_response(500, "Erreur : " . $psql->errorInfo()[2], NULL);
+                                }
+                            } else {
+                                // Création d'une nouvelle entrée
+                                $sql = "INSERT INTO likedislike (fk_id_article, fk_id_utilisateur, action_a) VALUES (:fk_id_article, :fk_id_utilisateur, :action_a)";
+                                $psql = $database->prepare($sql);
+                                $params = array(
+                                    ':fk_id_article' => $id_article,
+                                    ':fk_id_utilisateur' => $payload_id,
+                                    ':action_a' => $action
+                                );
+                                if($psql->execute($params)){
+                                    deliver_response(200, "L'action a été ajoutée avec succès", NULL);
+                                }
+                                else {
+                                    deliver_response(500, "Erreur : " . $psql->errorInfo()[2], NULL);
+                                }
                             }
                         }
                     }
                 }
             }
+            elseif (!empty($_GET['id_article']) && $action == "update") {
+                if($payload_role != "publisher"){
+                    deliver_response(400, "Vous n'avez pas les droits pour modifier un article", NULL);
+                }
+                else{
+                    $sql = "SELECT fk_id_auteur FROM article WHERE id_article = :id_article";
+                    $psql = $database->prepare($sql);
+                    $params = array(
+                        ':id_article' => $id_article
+                    );
+                    $psql->execute($params);
+                    $result = $psql->fetch(PDO::FETCH_ASSOC);
+
+                    if(empty($result)){
+                        http_response_code(400);
+                        echo "L'article n'existe pas";
+                        break;
+                    }
+                    else{
+                        $fk_id_auteur = $result['fk_id_auteur'];
+
+                        if ($payload_id != $fk_id_auteur) {
+                            deliver_response(400, "Vous n'avez pas les droits pour modifier cet article", NULL);
+                            break;
+                        }
+                        else {
+                            $sql = "UPDATE article SET contenu = :contenu WHERE id_article = :id_article";
+                            $psql = $database->prepare($sql);
+                            $params = array(
+                                ':contenu' => $_GET['contenu'],
+                                ':id_article' => $id_article
+                            );
+                            if ($psql->execute($params)) {
+                                // si l'insertion de l'article a réussi, renvoyer un code 201
+                                deliver_response(201, "L'article a été modifié avec succès", NULL);
+                            } 
+                            else {
+                                // si l'insertion de l'article a échoué, renvoyer une erreur
+                                deliver_response(500,"Erreur : ", $psql->errorInfo()[2]);
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+               deliver_response(400, "L'action doit être soit'like' soit 'dislike' soit 'update'.", NULL);
+                exit();
+            }
         }
         else {
-            http_response_code(400);
-            echo "Le jeton n'est pas valide ou a expiré";
+            deliver_response(400, "Le jeton n'est pas valide ou a expiré", NULL);
         }
-        break;    
-
-    default :
-    /// Récupération de l'identifiant de la ressource envoyé par le Client
-        
-        /// Envoi de la réponse au Client
-        deliver_response(200, "Votre message", NULL);
+        break; 
+    default: 
+        deliver_response(400, "Méthode non autorisée", NULL);
         break;
 }
 /// Envoi de la réponse au Client

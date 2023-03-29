@@ -1,0 +1,223 @@
+{
+	"info": {
+		"_postman_id": "4f3be721-f3ae-4e19-ae46-44de5f147d13",
+		"name": "API REST serveur application",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "GET",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImMiLCJtZHAiOiJhIiwicm9sZV9yIjoiYWRtaW4iLCJleHAiOjE2Nzk1OTA5NTl9.Z_lXuU9QoUdztS93RR3fAPYnuK3BxOeqbR0Aj3zs_2g",
+						"type": "default"
+					}
+				],
+				"url": {
+					"raw": "http://localhost/ProjetR401/serveur_application.php",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"ProjetR401",
+						"serveur_application.php"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST PUBLICATION",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNsZW1lbnQyIiwibWRwIjoiYSIsInJvbGVfciI6InB1Ymxpc2hlciIsImV4cCI6MTY3OTU5MzEyMX0.NB_XehlEBq7UI4FAwep_SY3wOxwkLFAsspP48i7Ybvo",
+						"type": "default"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"contenu\": \"ici du contenu\",\r\n    \"date_d\": \"2023-03-23\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost/ProjetR401/serveur_application.php",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"ProjetR401",
+						"serveur_application.php"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNsIiwibWRwIjoiYSIsInJvbGVfciI6ImFkbWluIiwiZXhwIjoxNjc5NDgwMzU2fQ.ALaHk588V8jF2zbXUaC7kmEWz2zxVCYR0XWYB7UBytM",
+						"type": "default"
+					}
+				],
+				"url": {
+					"raw": "http://localhost/ProjetR401/serveur_application.php?id_article=7",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"ProjetR401",
+						"serveur_application.php"
+					],
+					"query": [
+						{
+							"key": "id_article",
+							"value": "7"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PATCH",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer ",
+						"type": "default"
+					}
+				],
+				"url": {
+					"raw": "http://localhost/ProjetR401/serveur_application.php?id_article=5&action=dislike",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"ProjetR401",
+						"serveur_application.php"
+					],
+					"query": [
+						{
+							"key": "id_article",
+							"value": "5"
+						},
+						{
+							"key": "action",
+							"value": "dislike",
+							"description": "like ou dislike"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "jwt",
+					"jwt": [
+						{
+							"key": "secret",
+							"value": "secret",
+							"type": "string"
+						},
+						{
+							"key": "algorithm",
+							"value": "HS256",
+							"type": "string"
+						},
+						{
+							"key": "isSecretBase64Encoded",
+							"value": false,
+							"type": "boolean"
+						},
+						{
+							"key": "payload",
+							"value": "{}",
+							"type": "string"
+						},
+						{
+							"key": "addTokenTo",
+							"value": "header",
+							"type": "string"
+						},
+						{
+							"key": "headerPrefix",
+							"value": "Bearer",
+							"type": "string"
+						},
+						{
+							"key": "queryParamKey",
+							"value": "token",
+							"type": "string"
+						},
+						{
+							"key": "header",
+							"value": "{}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n        \"id_utilisateur\": \"c\",\r\n        \"mdp\": \"a\",\r\n        \"action\": \"connexion\"\r\n    }"
+				},
+				"url": {
+					"raw": "http://localhost/ProjetR401/serveur_authentification.php",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"ProjetR401",
+						"serveur_authentification.php"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
